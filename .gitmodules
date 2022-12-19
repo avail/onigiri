@@ -1,0 +1,9 @@
+[submodule "vendor/minhook"]
+	path = vendor/minhook
+	url = https://github.com/TsudaKageyu/minhook
+[submodule "vendor/v-classes"]
+	path = vendor/v-classes
+	url = https://github.com/Yimura/GTAV-Classes
+[submodule "vendor/udis86"]
+	path = vendor/udis86
+	url = https://github.com/vmt/udis86
