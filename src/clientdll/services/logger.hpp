@@ -23,28 +23,16 @@ namespace onigiri::services
 		static void shutdown();
 
 
-		static inline void info(const char* format, ...)
+		template<typename... argz>
+		static inline void info(std::format_string<argz...> fmt, argz&&... args)
 		{
-			char buffer[1024]{ 0 };
-
-			va_list args;
-			va_start(args, format);
-			vsprintf(&buffer[strlen(buffer)], format, args);
-			va_end(args);
-
-			write_log({ log_level::info, buffer });
+			write_log({ log_level::info, &std::format(fmt, std::forward<argz>(args)...)[0] });
 		}
 
-		static inline void debug(const char* format, ...)
+		template<typename... argz>
+		static inline void debug(std::format_string<argz...> fmt, argz&&... args)
 		{
-			char buffer[1024]{ 0 };
-
-			va_list args;
-			va_start(args, format);
-			vsprintf(&buffer[strlen(buffer)], format, args);
-			va_end(args);
-
-			write_log({ log_level::debug, buffer });
+			write_log({ log_level::debug, &std::format(fmt, std::forward<argz>(args)...)[0] });
 		}
 
 		// logging via instance += { level, print }

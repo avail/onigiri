@@ -1,6 +1,6 @@
-#include "Hooking.h"
 #include <Windows.h>
-#include "StdInc.hpp"
+
+#include <Hooking.h>
 
 namespace hook
 {

@@ -22,7 +22,7 @@ bool __stdcall DllMain(HMODULE hModule, DWORD reason, PVOID)
 			onigiri::services::logger::initialize();
 
 			onigiri::utils::storage::init();
-			onigiri::utils::detour::init();
+			onigiri::utils::init();
 
 			onigiri::services::logger::info("onigiri started~");
 
@@ -53,7 +53,7 @@ bool __stdcall DllMain(HMODULE hModule, DWORD reason, PVOID)
 			//onigiri::scripthook::g_ScriptManagerThread.FreeScripts();
 			//onigiri::scripthook::ScriptEngine::RemoveAllThreads();
 
-			onigiri::utils::detour::shutdown();
+			onigiri::utils::shutdown();
 			onigiri::services::logger::shutdown();
 
 			CloseHandle(thread);

@@ -22,9 +22,13 @@ using namespace std::literals;
 	void operator=(const T &) = delete
 
 
+#include <Hooking.h>
+#include <Hooking.Invoke.h>
+#include <Hooking.IAT.h>
+#include <Hooking.Patterns.h>
+
 #include <utils/static_initializer.hpp>
 #include <utils/storage.hpp>
-#include <utils/Hooking.Patterns.h>
 #include <utils/detour.hpp>
 
 #include <services/logger.hpp>
@@ -33,45 +37,6 @@ inline std::atomic_bool g_running{ false };
 
 std::wstring to_wide(const std::string& narrow);
 std::string to_narrow(const std::wstring& wide);
-
-
-inline constexpr char ToLower(const char c)
-{
-	return (c >= 'A' && c <= 'Z') ? (c - 'A' + 'a') : c;
-}
-
-inline constexpr uint32_t HashString(std::string_view string)
-{
-	uint32_t hash = 0;
-
-	for (char ch : string)
-	{
-		hash += ToLower(ch);
-		hash += (hash << 10);
-		hash ^= (hash >> 6);
-	}
-
-	hash += (hash << 3);
-	hash ^= (hash >> 11);
-	hash += (hash << 15);
-
-	return hash;
-}
-
-inline constexpr uint32_t HashRageString(std::string_view string)
-{
-	uint32_t hash = 0;
-
-	for (char ch : string)
-	{
-		hash += ch;
-		hash += (hash << 10);
-		hash ^= (hash >> 6);
-	}
-
-	hash += (hash << 3);
-	hash ^= (hash >> 11);
-	hash += (hash << 15);
-
-	return hash;
-}
+char to_lower(const char c);
+uint32_t hash_string(std::string_view string);
+uint32_t hash_rage_string(std::string_view string);

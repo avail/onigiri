@@ -51,6 +51,19 @@ workspace "REKT.GTA5"
 
 	editandcontinue "Off"
 
+project "shared"
+	kind "StaticLib"
+	language "C++"
+	staticruntime "On"
+
+	includedirs {
+		"src/shared"
+	}
+
+	files {
+		"src/shared/**.*"
+	}
+
 project "clientdll"
 	targetname "onigiri"
 	kind "SharedLib"
@@ -62,6 +75,7 @@ project "clientdll"
 
 	includedirs {
 		"src/clientdll",
+		"src/shared"
 	}
 
 	files {
@@ -71,6 +85,7 @@ project "clientdll"
 	}
 
 	links {
+		"shared",
 		"winmm"
 	}
 

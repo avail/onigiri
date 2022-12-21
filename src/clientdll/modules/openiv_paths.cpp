@@ -1,9 +1,6 @@
 #include <stdinc.hpp>
 
-#include <utils/Hooking.Invoke.h>
-#include <utils/Hooking.h>
-#include <utils/Hooking.IAT.h>
-
+#if 0
 HANDLE OpenBulkHook(void* device, const char* path, __int64* a3)
 {
 	HANDLE FileW;
@@ -88,7 +85,7 @@ uint64_t GetAttributesHook(void* device, const char* path)
 	return FileAttributesW;
 }
 
-static HookFunction _([]()
+static onigiri::utils::static_initializer _([]()
 {
 	return;
 	hook::jump(hook::get_pattern("40 53 48 81 EC ? ? ? ? 49 8B D8 4C 8B C2 48 8D 4C 24 ? BA ? ? ? ? E8 ? ? ? ? 48 83 64 24"), OpenBulkHook);
@@ -96,3 +93,4 @@ static HookFunction _([]()
 	hook::jump(hook::get_pattern("48 81 EC ? ? ? ? 4C 8B C2 48 8D 4C 24 ? BA ? ? ? ? E8 ? ? ? ? 4C 8D 44 24 ? 33 D2 48 8B C8 FF 15 ? ? ? ? 85 C0 75 04 33 C0 EB 0F 8B 44 24 3C 8B 4C 24 40 48 C1 E0 20 48 0B C1 48 81 C4"), GetFileSizeHook);
 	hook::jump(hook::get_pattern("48 89 5C 24 ? 57 48 81 EC ? ? ? ? 4C 8B C2 48 8D 4C 24 ? BA ? ? ? ? E8 ? ? ? ? 48 8B C8 FF 15 ? ? ? ? 83 CF FF 8B D8 3B C7 74 0F 48 8D 4C 24"), GetAttributesHook);
 });
+#endif

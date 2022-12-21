@@ -4,8 +4,7 @@
  * See LICENSE and MENTIONS in the root of the source tree for information
  * regarding licensing.
  */
-#include <StdInc.hpp>
-#include "Hooking.Patterns.h"
+#include <Hooking.Patterns.h>
 
 #define WIN32_LEAN_AND_MEAN
 

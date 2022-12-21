@@ -2,8 +2,6 @@
 #include <set>
 #include <gta/fiDevice.hpp>
 
-#include <utils/Hooking.Invoke.h>
-
 static hook::cdecl_stub<bool* (rage::fiDevice*, const char*)> mount_wrap([]()
 {
 	return hook::get_pattern("48 89 5C 24 ? 57 48 81 EC ? ? ? ? 44 8A 81 ? ? ? ? 48 8B DA 48 8B F9 48 8B D1 48 8B CB E8 ? ? ? ? 84 C0 74 64 48 8D 4C 24 ? 33 D2 41 B8");
@@ -20,14 +18,14 @@ void print_if_unique(const std::string& print)
 	
 	if (!arr.contains(print))
 	{
-		onigiri::services::logger::info(print.c_str());
+		onigiri::services::logger::info("{}", print);
 		arr.emplace(print);
 	}
 }
 
 static void device_print(const char* func, const char* detail)
 {
-	onigiri::services::logger::debug(std::format("[{}] {}", func, detail).c_str());
+	onigiri::services::logger::debug("[{}] {}", func, detail);
 }
 
 bool rage::fiDevice::Mount(const char* mountPoint)

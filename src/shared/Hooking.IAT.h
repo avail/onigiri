@@ -1,7 +1,5 @@
 #pragma once
 
-#include <StdInc.hpp>
-
 namespace hook
 {
 	template<typename TTarget, typename T>

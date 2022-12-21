@@ -16,11 +16,11 @@ int main(int argc, char* argv[])
 
 	auto pid = injector::wait_for_process("GTA5.exe");
 
-	auto libPath = std::filesystem::current_path() / "onigiri.dll";
+	auto lib_path = std::filesystem::current_path() / "onigiri.dll";
 
 	log(std::format("got gta5 process: {}\n", pid).c_str());
 
-	auto res = injector::inject_dll(pid, libPath);
+	auto res = injector::inject_dll(pid, lib_path);
 
 	if (res)
 	{

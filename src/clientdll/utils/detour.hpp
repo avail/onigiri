@@ -29,28 +29,58 @@ namespace onigiri::utils
 		F* function_;
 	};
 
-	class detour final
+	template <typename F> inline auto detour(void* address, F* function) -> utils::function<F>
 	{
-	public:
-		static inline void init()
+		auto result = utils::function<F>();
+
+		if (::MH_CreateHook(reinterpret_cast<void*>(address), reinterpret_cast<void*>(function), reinterpret_cast<void**>(&result)) != ::MH_OK)
 		{
-			MH_Initialize();
+			//NFSCO_ASSERT(false);
 		}
 
-		static inline void shutdown()
+		if (::MH_EnableHook(MH_ALL_HOOKS) != ::MH_OK)
 		{
-			MH_DisableHook(MH_ALL_HOOKS);
-			MH_Uninitialize();
+			//NFSCO_ASSERT(false);
 		}
 
-		template <typename F> static __forceinline utils::function<F> make(void* address, F* function)
+		return result;
+	}
+
+	template <typename F> inline auto call(void* address, F* function) -> utils::function<F>
+	{
+		auto result = utils::function<F>();
+
+		hook::set_call(&result, address);
+		hook::call(address, function);
+
+		return result;
+	}
+
+	template <typename F> inline auto iat(const wchar_t* module_name, const char* function_name, F* function) -> utils::function<F>
+	{
+		auto result = utils::function<F>(nullptr);
+
+		if (::MH_CreateHookApi(module_name, function_name, reinterpret_cast<void*>(function), reinterpret_cast<void**>(&result)) != ::MH_OK)
 		{
-			auto result = utils::function<F>();
-
-			MH_CreateHook(address, reinterpret_cast<void*>(function), reinterpret_cast<void**>(&result));
-			MH_EnableHook(MH_ALL_HOOKS);
-
-			return result;
+			//NFSCO_ASSERT(false);
 		}
-	};
+
+		if (::MH_EnableHook(MH_ALL_HOOKS) != ::MH_OK)
+		{
+			//NFSCO_ASSERT(false);
+		}
+
+		return result;
+	}
+
+	inline void init()
+	{
+		::MH_Initialize();
+	}
+
+	inline void shutdown()
+	{
+		::MH_Uninitialize();
+	}
+
 }

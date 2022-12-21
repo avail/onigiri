@@ -1,8 +1,5 @@
 #include <stdinc.hpp>
 
-#include <utils/HookFunction.h>
-#include <utils/Hooking.h>
-
 void SetThreadName(int dwThreadID, const char* threadName)
 {
 	auto SetThreadDescription = (HRESULT(WINAPI*)(HANDLE, PCWSTR))GetProcAddress(GetModuleHandle(L"kernelbase.dll"), "SetThreadDescription");
@@ -68,7 +65,7 @@ static HANDLE CreateThreadWrapper(_In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttribu
 	return hThread;
 }
 
-static HookFunction hookFunction([]()
+static onigiri::utils::static_initializer _([]()
 {
 	// RAGE thread creation function: CreateThread call
 	void* createThread = hook::pattern("48 89 44 24 28 33 C9 44 89 7C 24 20").count(1).get(0).get<void>(12);

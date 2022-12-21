@@ -5,8 +5,9 @@
  * regarding licensing.
  */
 
-#include <StdInc.hpp>
-#include <utils/HookFunction.h>
+#include <string>
+
+#include <HookFunction.h>
 
 static HookFunctionBase* g_hookFunctions;
 

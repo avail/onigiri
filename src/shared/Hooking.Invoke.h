@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <utils/HookFunction.h>
+#include <HookFunction.h>
 
 namespace hook
 {

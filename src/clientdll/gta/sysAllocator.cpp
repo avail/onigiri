@@ -2,10 +2,6 @@
 
 #include <gta/sysAllocator.hpp>
 
-#include <utils/Hooking.h>
-#include <utils/Hooking.Patterns.h>
-#include <utils/HookFunction.h>
-
 static rage::sysMemAllocator* g_gtaTlsEntry;
 static uint32_t g_tempAllocatorTlsOffset;
 
@@ -59,7 +55,7 @@ static DWORD RageThreadHook(HANDLE hThread)
 	return GetThreadId(hThread);
 }
 
-static HookFunction hookFunction([]()
+static onigiri::utils::static_initializer _([]()
 {
 	rage::g_tlsOffset = *hook::pattern("B9 ? ? ? ? 48 8B 0C 01 45 33 C9 49 8B D2 48").get(0).get<uint32_t>(1);
 

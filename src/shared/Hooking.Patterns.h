@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <Windows.h>
+
 #include <cassert>
 #include <vector>
 #include <string_view>

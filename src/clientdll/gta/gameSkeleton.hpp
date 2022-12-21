@@ -32,25 +32,6 @@ namespace rage
 		bool TryInvoke(InitFunctionType type);
 	};
 
-	// arguments: type
-	/*extern fwEvent<InitFunctionType> OnInitFunctionStart;
-
-	// arguments: type, order index, count
-	extern fwEvent<InitFunctionType, int, int> OnInitFunctionStartOrder;
-
-	// arguments: type, func index, data (non-const)
-	// can be canceled to prevent invocation
-	extern fwEvent<InitFunctionType, int, InitFunctionData&> OnInitFunctionInvoking;
-
-	// arguments: type, data
-	extern fwEvent<InitFunctionType, const InitFunctionData&> OnInitFunctionInvoked;
-
-	// arguments: type, order index
-	extern fwEvent<InitFunctionType, int> OnInitFunctionEndOrder;
-
-	// arguments: type
-	extern fwEvent<InitFunctionType> OnInitFunctionEnd;*/
-
 	struct InitFunctionEntry
 	{
 		int order;
