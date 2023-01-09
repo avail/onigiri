@@ -76,7 +76,7 @@ namespace hook
 		LPVOID funcStub = AllocateFunctionStub((void*)GetModuleHandle(NULL), get_func_ptr<T>::get(func), Register);
 
 		put<uint8_t>(address, 0xE9);
-		put<int>((uintptr_t)address + 1, (intptr_t)funcStub - (intptr_t)address - 5);
+		put<int>((uintptr_t)address + 1, static_cast<int>((intptr_t)funcStub - (intptr_t)address - 5));
 	}
 
 	template<typename T, typename AT>
@@ -97,7 +97,7 @@ namespace hook
 		LPVOID funcStub = AllocateFunctionStub((void*)GetModuleHandle(NULL), get_func_ptr<T>::get(func), Register);
 
 		put<uint8_t>(address, 0xE8);
-		put<int>((uintptr_t)address + 1, (intptr_t)funcStub - (intptr_t)address - 5);
+		put<int>((uintptr_t)address + 1, static_cast<int>((intptr_t)funcStub - (intptr_t)address - 5));
 	}
 
 	template<typename T, typename AT>

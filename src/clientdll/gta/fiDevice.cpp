@@ -81,7 +81,7 @@ uint32_t rage::fiDeviceLocal::ReadFile(HANDLE handle, void* buffer, uint32_t len
 
 	device_print(__FUNCTION__, handleNames[handle].c_str());
 
-	return file->gcount();
+	return static_cast<uint32_t>(file->gcount());
 }
 
 uint32_t rage::fiDeviceLocal::ReadBulk(HANDLE handle, uint64_t offset, char* buffer, uint32_t length)

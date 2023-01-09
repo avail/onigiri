@@ -2,16 +2,34 @@
 
 #include <codecvt>
 
-static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> m_converter;
-
 std::wstring to_wide(const std::string& narrow)
 {
-	return m_converter.from_bytes(narrow);
+	if (narrow.empty())
+	{
+		return L"";
+	}
+
+	auto narrow_size = static_cast<std::int32_t>(narrow.size());
+	auto wide_size = MultiByteToWideChar(CP_UTF8, 0, &narrow[0], narrow_size, NULL, 0);
+
+	std::wstring wide(wide_size, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &narrow[0], narrow_size, &wide[0], wide_size);
+	return wide;
 }
 
 std::string to_narrow(const std::wstring& wide)
 {
-	return m_converter.to_bytes(wide);
+	if (wide.empty())
+	{
+		return "";
+	}
+
+	auto wide_size = static_cast<std::int32_t>(wide.size());
+	auto narrow_size = WideCharToMultiByte(CP_UTF8, 0, &wide[0], wide_size, NULL, 0, NULL, NULL);
+
+	std::string narrow(narrow_size, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &wide[0], wide_size, &narrow[0], narrow_size, NULL, NULL);
+	return narrow;
 }
 
 char to_lower(const char c)

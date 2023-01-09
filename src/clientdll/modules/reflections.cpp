@@ -2,7 +2,7 @@
 
 #include <modules/reflections.hpp>
 
-#include <MinHook.h>
+#include <intrin.h>
 
 #include <gta/CRenderPhase.hpp>
 
@@ -50,7 +50,7 @@ namespace onigiri::modules
 		int highest_bit{ 0 };
 		const float fVar{ (float)(res_width * res_height) };
 
-		const int root = _mm_sqrt_ps(_mm_load_ps(&fVar)).m128_f32[0];
+		const auto root = static_cast<std::int32_t>(_mm_sqrt_ps(_mm_load_ps(&fVar)).m128_f32[0]);
 
 		for (int i = root; i; i >>= 1)
 		{

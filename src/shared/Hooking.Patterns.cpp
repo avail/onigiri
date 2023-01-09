@@ -6,8 +6,6 @@
  */
 #include <Hooking.Patterns.h>
 
-#define WIN32_LEAN_AND_MEAN
-
 #include <algorithm>
 
 #if PATTERNS_USE_HINTS

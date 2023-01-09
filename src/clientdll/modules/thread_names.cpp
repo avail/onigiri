@@ -1,5 +1,7 @@
 #include <stdinc.hpp>
 
+#include <intrin.h>
+
 void SetThreadName(int dwThreadID, const char* threadName)
 {
 	auto SetThreadDescription = (HRESULT(WINAPI*)(HANDLE, PCWSTR))GetProcAddress(GetModuleHandle(L"kernelbase.dll"), "SetThreadDescription");

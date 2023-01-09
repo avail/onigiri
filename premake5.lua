@@ -1,6 +1,6 @@
 local submodule = require "tools/submodule"
 
-systemversion "10.0.22000.0"
+systemversion "10.0.25272.0"
 toolset "v143"
 platforms { "x64" }
 
@@ -30,7 +30,7 @@ workspace "REKT.GTA5"
 	staticruntime "On"
 	floatingpoint "Fast"
 	vectorextensions "AVX2"
-	cppdialect "C++20"
+	cppdialect "c++latest"
 
 	defines {
 		"NOMINMAX",
