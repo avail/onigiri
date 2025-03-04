@@ -1,5 +1,8 @@
 #include <stdinc.hpp>
 
+// don't need tls.. i think
+#if 0
+
 #include <gta/sysAllocator.hpp>
 
 static rage::sysMemAllocator* g_gtaTlsEntry;
@@ -66,3 +69,5 @@ static onigiri::utils::static_initializer _([]()
 
 	g_tempAllocatorTlsOffset = *hook::get_pattern<uint32_t>("4A 3B 1C 09 75 ? 49 8B 0C 08 48", -4);
 });
+
+#endif

@@ -2,6 +2,7 @@
 
 #include <utils/static_initializer.hpp>
 
+#if 0
 static hook::cdecl_stub<uint32_t* (uint32_t*, const char*, bool, const char*, bool)> func([]()
 {
 	return hook::get_pattern("B2 01 48 8B CD 45 8A E0 4D 0F 45 F9 E8", -0x25);
@@ -56,3 +57,4 @@ static onigiri::utils::static_initializer _([]()
 
 	set_hook();
 });
+#endif

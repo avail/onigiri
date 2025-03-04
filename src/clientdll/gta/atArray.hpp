@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <gta/sysAllocator.hpp>
 
 #ifndef max
@@ -172,4 +173,5 @@ public:
 #ifdef max_defined
 #undef max_defined
 #undef max
+#endif
 #endif

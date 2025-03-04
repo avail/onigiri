@@ -1,6 +1,6 @@
 local submodule = require "tools/submodule"
 
-systemversion "10.0.25272.0"
+systemversion "10.0.22621.0"
 toolset "v143"
 platforms { "x64" }
 
@@ -20,7 +20,7 @@ submodule.define({
 })
 
 workspace "REKT.GTA5"
-	configurations { "Release" }
+	configurations { "Debug", "Release" }
 
 	location "build"
 
@@ -39,9 +39,18 @@ workspace "REKT.GTA5"
 		"_USE_MATH_DEFINES"
 	}
 
+	filter("configurations:Debug")
+		targetdir "bin/debug"
+		defines({ "DEBUG" })
+
 	filter "configurations:Release"
-		flags { "LinkTimeOptimization", "NoManifest", "MultiProcessorCompile" }
-		targetdir "bin"
+		flags({
+			"LinkTimeOptimization",
+			"NoManifest",
+			"MultiProcessorCompile",
+			"NoIncrementalLink"
+		})
+		targetdir "bin/release"
 		defines { "NDEBUG" }
 		optimize "speed"
 
@@ -66,6 +75,7 @@ project "shared"
 
 project "clientdll"
 	targetname "onigiri"
+	targetextension(".asi")
 	kind "SharedLib"
 	language "C++"
 	staticruntime "On"
@@ -89,9 +99,13 @@ project "clientdll"
 		"winmm"
 	}
 
+	postbuildcommands({
+        'if "%COMPUTERNAME%" == "MYTHOLOGIA"  ( copy/y "$(TargetPath)" "G:\\Games\\Grand Theft Auto V Enhanced\\onigiri.asi" )'
+    })
+
 	submodule.include({ "minhook" })
 
-project "onigiri"
+--[[project "onigiri"
 	kind "ConsoleApp"
 	language "c++"
 	staticruntime "On"
@@ -107,6 +121,7 @@ project "onigiri"
 		"src/loader/**.cpp",
 		"src/loader/**.hpp",
 	}
+]]
 
 group "vendor"
 	submodule.register_all()

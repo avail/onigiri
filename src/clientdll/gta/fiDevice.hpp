@@ -22,7 +22,8 @@ namespace rage
 		virtual ~fiDevice() = default;
 		virtual HANDLE Open(const char* fileName, bool readOnly) = 0;
 		virtual HANDLE OpenBulk(const char* fileName, uint64_t* ptr) = 0;
-		virtual HANDLE OpenBulkWrap(const char* fileName, uint64_t* ptr, void* unk) = 0;
+		virtual HANDLE OpenBulkDrm(const char* fileName, uint64_t* ptr, void* unk) = 0;
+		virtual HANDLE OpenGen9(const char* fileName, uint64_t* ptr, void* unk1, void* unk2) = 0;
 		virtual HANDLE CreateLocal(const char* fileName) = 0;
 		virtual HANDLE Create(const char* fileName) = 0;
 		virtual uint32_t ReadFile(HANDLE handle, void* buffer, uint32_t toRead) = 0;
@@ -53,6 +54,7 @@ namespace rage
 		virtual uint32_t GetAttributes(const char* path) = 0;
 		virtual uint64_t GetRootDeviceId(const char*) = 0;
 		virtual bool SetAttributes(const char* file, uint32_t attributes) = 0;
+		virtual uint64_t ReturnZero1() = 0;
 		virtual uint32_t IsMemoryMappedDevice() = 0;
 		virtual bool SafeRead(HANDLE handle, void* buffer, uint32_t length) = 0;
 		virtual bool SafeWrite(HANDLE handle, const void* buffer, uint32_t length) = 0;
@@ -90,7 +92,8 @@ namespace rage
 		~fiDeviceLocal();
 		HANDLE Open(const char* fileName, bool readOnly) override;
 		HANDLE OpenBulk(const char* fileName, uint64_t* ptr) override;
-		HANDLE OpenBulkWrap(const char* fileName, uint64_t* ptr, void* unk) override;
+		HANDLE OpenBulkDrm(const char* fileName, uint64_t* ptr, void* unk) override;
+		HANDLE OpenGen9(const char* fileName, uint64_t* ptr, void* unk1, void* unk2) override; // new for gen9
 		HANDLE CreateLocal(const char* fileName) override;
 		HANDLE Create(const char* fileName) override;
 		uint32_t ReadFile(HANDLE handle, void* buffer, uint32_t length) override;
@@ -121,11 +124,12 @@ namespace rage
 		uint32_t GetAttributes(const char* fileName) override;
 		uint64_t GetRootDeviceId(const char*) override;
 		bool SetAttributes(const char* fileName, uint32_t attributes) override;
+		uint64_t ReturnZero1() override;
 		uint32_t IsMemoryMappedDevice() override;
 		bool SafeRead(HANDLE handle, void* buffer, uint32_t length) override;
 		bool SafeWrite(HANDLE handle, const void* buffer, uint32_t length) override;
 		uint32_t GetResourceInfo(const char* fileName, rage::fiResourceInfo* flags) override;
-		int32_t IsValidHandle() override;
+		int32_t IsValidHandle() override; 
 		uint32_t GetBulkOffset(HANDLE handle) override;
 		uint32_t GetPhysicalSortKey(const char*) override;
 		bool IsRpf() override;

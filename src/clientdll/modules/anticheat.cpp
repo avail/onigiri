@@ -2,6 +2,7 @@
 
 #include <utils/static_initializer.hpp>
 
+#if 0
 #include <gta/gameSkeleton.hpp>
 
 static std::uint32_t sus_2802_hash = 0xA0F39FB6;
@@ -90,6 +91,8 @@ namespace rage
 
 static onigiri::utils::static_initializer _([]()
 {
+	return;
+
 	onigiri::services::logger::info("disabling rage::RageSecurity~");
 
 	{
@@ -100,3 +103,4 @@ static onigiri::utils::static_initializer _([]()
 	hook::jump(hook::get_call(hook::get_pattern("48 8D 0D ? ? ? ? BA 02 00 00 00 84 DB 75 05", -17)), hook::get_member(&rage::gameSkeleton::RunUpdate));
 	hook::jump(hook::get_pattern("40 53 48 83 EC 20 48 8B 59 20 EB 0D 48 8B 03 48"), hook::get_member(&rage::gameSkeleton_updateBase::RunGroup));
 }, INT32_MIN);
+#endif

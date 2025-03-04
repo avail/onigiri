@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 namespace onigiri::modules
 {
 	class reflections final
@@ -13,3 +14,4 @@ namespace onigiri::modules
 		static inline utils::function<decltype(reflection_render_hook)> reflection_render;
 	};
 }
+#endif

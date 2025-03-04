@@ -2,16 +2,6 @@
 #include <set>
 #include <gta/fiDevice.hpp>
 
-static hook::cdecl_stub<bool* (rage::fiDevice*, const char*)> mount_wrap([]()
-{
-	return hook::get_pattern("48 89 5C 24 ? 57 48 81 EC ? ? ? ? 44 8A 81 ? ? ? ? 48 8B DA 48 8B F9 48 8B D1 48 8B CB E8 ? ? ? ? 84 C0 74 64 48 8D 4C 24 ? 33 D2 41 B8");
-});
-
-static hook::cdecl_stub<void(void*, const char*, bool, rage::fiDevice*)> set_path([]()
-{
-	return hook::get_pattern("48 89 5C 24 ? 48 89 74 24 ? 57 48 81 EC ? ? ? ? 83 64 24 ? ? 49 8B F9");
-});
-
 void print_if_unique(const std::string& print)
 {
 	static std::set<std::string> arr;
@@ -28,10 +18,21 @@ static void device_print(const char* func, const char* detail)
 	onigiri::services::logger::debug("[{}] {}", func, detail);
 }
 
+
+static hook::cdecl_stub<bool* (rage::fiDevice*, const char*)> mount_wrap([]()
+{
+	return hook::get_pattern("44 0F B6 81 14 01 00 00", -0x1B);
+});
+
 bool rage::fiDevice::Mount(const char* mountPoint)
 {
 	return mount_wrap(this, mountPoint);
 }
+
+static hook::cdecl_stub<void(void*, const char*, bool, rage::fiDevice*)> set_path([]()
+{
+	return hook::get_pattern("41 B8 00 01 00 00 E8 ? ? ? ? 88 9E", -0x36);
+});
 
 void rage::fiDevice::SetPath(const char* path, bool allowRoot, rage::fiDevice* parent)
 {
@@ -40,7 +41,7 @@ void rage::fiDevice::SetPath(const char* path, bool allowRoot, rage::fiDevice* p
 
 rage::fiDeviceRelative::fiDeviceRelative()
 {
-	VMT = hook::get_pattern("48 8D 05 ? ? ? ? 48 89 03 EB ? 33 DB 48 8D 15 ? ? ? ? 45 33 C9", 3);
+	VMT = hook::get_pattern("48 C7 47 08 00 00 00 00 48 89 3E", -7);
 	pad[0xF8] = 0;
 }
 
@@ -232,9 +233,14 @@ HANDLE rage::fiDeviceLocal::OpenBulk(const char* fileName, uint64_t* ptr)
 	return Open(fileName, true);
 }
 
-HANDLE rage::fiDeviceLocal::OpenBulkWrap(const char* fileName, uint64_t* ptr, void* unk)
+HANDLE rage::fiDeviceLocal::OpenBulkDrm(const char* fileName, uint64_t* ptr, void* unk)
 {
 	//device_print(__FUNCTION__, std::format("{} {:08x}", fileName, (uintptr_t)ptr).c_str());
+	return OpenBulk(fileName, ptr);
+}
+
+HANDLE rage::fiDeviceLocal::OpenGen9(const char* fileName, uint64_t* ptr, void* unk1, void* unk2)
+{
 	return OpenBulk(fileName, ptr);
 }
 
@@ -373,6 +379,11 @@ bool rage::fiDeviceLocal::SetAttributes(const char* fileName, uint32_t attribute
 uint32_t rage::fiDeviceLocal::IsMemoryMappedDevice()
 {
 	return 2;
+}
+
+uint64_t rage::fiDeviceLocal::ReturnZero1()
+{
+	return 0;
 }
 
 uint32_t rage::fiDeviceLocal::GetResourceInfo(const char* fileName, rage::fiResourceInfo* flags)

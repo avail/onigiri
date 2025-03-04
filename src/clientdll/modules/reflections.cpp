@@ -2,6 +2,7 @@
 
 #include <modules/reflections.hpp>
 
+#if 0
 #include <intrin.h>
 
 #include <gta/CRenderPhase.hpp>
@@ -87,7 +88,7 @@ namespace onigiri::modules
 
 	STATICALLY_INITIALIZE(reflections)([]()
 	{
-		//return;
+		return;
 
 		onigiri::services::logger::info("initializing reflection quality module~");
 		hook::call(hook::get_pattern<void>("E8 ? ? ? ? 8B D0 44 8B F0 B8"), reflections::get_reflection_resolution);
@@ -103,3 +104,4 @@ namespace onigiri::modules
 		*entity_index_1 = 3;
 	});
 }
+#endif

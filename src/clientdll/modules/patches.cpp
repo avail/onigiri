@@ -12,5 +12,5 @@ static onigiri::utils::static_initializer _([]()
 	onigiri::utils::iat(L"user32.dll", "SetWindowsHookExA", no_windows_hook_ex_a);
 
 	// never hide console >:(
-	hook::nop(hook::get_pattern("FF 15 ? ? ? ? E8 ? ? ? ? 65 48 8B 0C 25 ? ? ? ? 8B 05 ? ? ? ? 48 8B 04 C1 BA ? ? ? ? 83 24 02 00 E8"), 6);
+	hook::nop(hook::get_pattern("74 0B 48 89 C1 31 D2"), 7);
 });

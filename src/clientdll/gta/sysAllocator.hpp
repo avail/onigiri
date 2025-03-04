@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 namespace rage
 {
 	class sysMemAllocator
@@ -68,3 +69,4 @@ namespace rage
 		}
 	};
 }
+#endif

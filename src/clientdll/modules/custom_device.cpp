@@ -6,18 +6,43 @@
 
 #include <modules/custom_device.hpp>
 
+
+static hook::cdecl_stub<void(const char*, bool, rage::fiDevice*)> set_path([]()
+{
+	return hook::get_pattern("49 63 F5 42 0F BE 54 3E FF", -0x72);
+});
+
+static hook::cdecl_stub<bool*(rage::fiDevice*, const char*)> mount_wrap([]()
+{
+	return hook::get_pattern("44 0F B6 81 14 01 00 00", -0x1B);
+});
+
 namespace onigiri::modules
 {
 	static hook::cdecl_stub<rage::fiDevice* (const char*, bool)> GetDeviceHook([]()
 	{
-		return hook::get_pattern("48 89 5C 24 ? 88 54 24 10 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 20 48 8D 15 ? ? ? ? 41 B8");
+		return hook::get_pattern("48 81 EC 88 05 00 00 89 D6 49 89 CE", -12);
 	});
+
+	custom_device::fiDeviceRelative::fiDeviceRelative()
+	{
+	}
+
+	void custom_device::fiDeviceRelative::SetPath(const char* relativeTo, rage::fiDevice* baseDevice, bool allowRoot)
+	{
+		set_path(relativeTo, allowRoot, baseDevice);
+	}
+
+	void custom_device::fiDeviceRelative::Mount(const char* mountPoint)
+	{
+		mount_wrap(GetDeviceHook(mountPoint, true), mountPoint);
+	}
 
 	char custom_device::open_archive_hook(rage::fiPackfile* a1, const char* path, char a3, int32_t type, __int64 a5)
 	{
 		auto device = GetDeviceHook(path, true);
 
-		if (device && custom_device::is_custom_device((rage::fiDeviceLocal*)device))
+		if (device && custom_device::is_custom_device((fiDeviceRelative*)device))
 		{
 			if (device->GetAttributes(path) & FILE_ATTRIBUTE_DIRECTORY)
 			{
@@ -40,41 +65,38 @@ namespace onigiri::modules
 
 		services::logger::debug("mods path: {}", cwd.string());
 
-		rage::fiDeviceLocal* root_device = new rage::fiDeviceLocal();
-		root_device->SetPath(cwd.string().c_str(), true, nullptr);
+		fiDeviceRelative* root_device = new fiDeviceRelative();
+		root_device->SetPath(cwd.string().c_str(), nullptr, true);
+		root_device->Mount("onigiri:/");
 
-		if (root_device->Mount("onigiri:/"))
-		{
-			services::logger::debug("root device mounted~");
-		}
-
-		platform_device = new rage::fiDeviceLocal();
-		platform_device_crc = new rage::fiDeviceLocal();
-		platform2_device = new rage::fiDeviceLocal();
-		platform2_device_crc = new rage::fiDeviceLocal();
-		common_device = new rage::fiDeviceLocal();
-		common_device_crc = new rage::fiDeviceLocal();
-		dlc_device = new rage::fiDeviceLocal();
-
-		platform_device->SetPath("onigiri:/platform/", true, nullptr);
+		services::logger::debug("root device mounted~");
+		
+		platform_device = new fiDeviceRelative();
+		platform_device->SetPath("onigiri:/platform/", nullptr, true);
 		platform_device->Mount("platform:/");
 
-		platform_device_crc->SetPath("onigiri:/platform/", true, nullptr);
+		platform_device_crc = new fiDeviceRelative();
+		platform_device_crc->SetPath("onigiri:/platform/", nullptr, true);
 		platform_device_crc->Mount("platformcrc:/");
 
-		platform2_device->SetPath("onigiri:/platform2/", true, nullptr);
+		platform2_device = new fiDeviceRelative();
+		platform2_device->SetPath("onigiri:/platform2/", nullptr, true);
 		platform2_device->Mount("platform2:/");
 
-		platform2_device_crc->SetPath("onigiri:/platform2/", true, nullptr);
+		platform2_device_crc = new fiDeviceRelative();
+		platform2_device_crc->SetPath("onigiri:/platform2/", nullptr, true);
 		platform2_device_crc->Mount("platform2crc:/");
 
-		common_device->SetPath("onigiri:/common/", true, nullptr);
+		common_device = new fiDeviceRelative();
+		common_device->SetPath("onigiri:/common/", nullptr, true);
 		common_device->Mount("common:/");
 
-		common_device_crc->SetPath("onigiri:/common/", true, nullptr);
+		common_device_crc = new fiDeviceRelative();
+		common_device_crc->SetPath("onigiri:/common/", nullptr, true);
 		common_device_crc->Mount("commoncrc:/");
 
-		dlc_device->SetPath("onigiri:/dlcpacks/", true, nullptr);
+		dlc_device = new fiDeviceRelative();
+		dlc_device->SetPath("onigiri:/dlcpacks/", nullptr, true);
 		dlc_device->Mount("dlcpacks:/");
 	}
 
@@ -96,75 +118,37 @@ namespace onigiri::modules
 		}
 	}
 
-	bool custom_device::set_thread_count_hook(void* param, int* value)
-	{
-		bool rv = custom_device::set_thread_count(param, value);
-
-		if (!rv)
-		{
-			*value = std::min(*value, 4);
-		}
-
-		return rv;
-	}
-
 	STATICALLY_INITIALIZE(custom_device)([]()
 	{
 		services::logger::info("applying custom device hooks");
 
-		custom_device::open_archive = utils::detour(hook::get_pattern("48 8B C4 48 89 58 10 48 89 70 18 48 89 78 20 55 41 54 41 55 41 56 41 57 48 8D 68 98 48 81 EC ? ? ? ? 41 8B F9 4C 8B E2 48 8B D9 4C 8B CA 48 8D 05"),
-			custom_device::open_archive_hook);
+		custom_device::open_archive = utils::detour(hook::get_pattern("48 81 EC 48 01 00 00 45 89 CD", -0x0C), custom_device::open_archive_hook);
 
 		{
-			auto location = hook::pattern("48 03 C3 44 88 34 38 66 01 1D").count(1).get(0).get<void>(0xE);
+			auto location = hook::pattern("66 C7 44 58 02 00 00").count(1).get(0).get<void>(0xE);
 			custom_device::initial_mount = utils::call(location, custom_device::initial_mount_hook);
 		}
 
-		{
-			void* location = hook::pattern("E8 ? ? ? ? 48 8B 0D ? ? ? ? 41 B0 01 48 8B D3").count(1).get(0).get<void>(18);
+		/*{
+			void* location = hook::pattern("48 8D ? ? ? ? ? B2 01 41 B8 FF FF FF FF 45 31 C9").count(1).get(0).get<void>(43);
 			custom_device::load_level_metas = utils::call(location, custom_device::load_level_metas_hook);
-		}
+		}*/
 
 		// increase non-DLC fiDevice mount limit
 		{
-			auto location = hook::get_pattern<int>("C7 05 ? ? ? ? 64 00 00 00 48 8B", 6);
+			auto location = hook::get_pattern<int>("C7 05 ? ? ? ? 64 00 00 00 C7 05 ? ? ? ? 00 01 00 00", 6);
 			hook::put<int>(location, *location * 15); // '1500' mount limit now, instead of '500'
 		}
 
 		// don't sort update:/ relative devices before ours
-		hook::nop(hook::pattern("C6 80 F0 00 00 00 01 E8 ? ? ? ? E8").count(1).get(0).get<void>(12), 5);
+		hook::nop(hook::pattern("C6 80 00 01 00 00 00 48 83 C4 20").count(1).get(0).get<void>(-12), 5);
 
 		// don't crash (forget to call rage::fiDevice::Unmount) on failed DLC text reads
-		{
+		// hmm..
+		/*{
 			auto location = hook::get_pattern("41 8B D6 E9 7C 02 00 00", 4);
 			*(int*)location -= 0x12;
-		}
-
-		// increase reserved physical memory amount threefold (to ~900 MB)
-		hook::put<uint32_t>(hook::get_pattern("48 81 C1 00 00 00 12 48 89 0D", 3), 0x36000000);
-
-		// limit max worker threads to 4 (since on high-core-count systems this leads
-		// to a lot of overhead when there's a blocking wait)
-		{
-			auto location = hook::get_pattern("89 05 ? ? ? ? E8 ? ? ? ? 48 8D 3D ? ? ? ? 48 63", 6);
-			custom_device::set_thread_count = utils::call(location, custom_device::set_thread_count_hook);
-		}
-
-		// extend grcResourceCache pool a bit
-		{
-			auto location = hook::get_pattern<char>("BA 00 00 05 00 48 8B C8 44 88");
-			hook::put<uint32_t>(location + 1, 0xA0000);
-			hook::put<uint32_t>(location + 23, 0xA001B);
-		}
-
-		// increase allocator amount
-		{
-			auto location = hook::get_pattern("41 B8 00 00 00 40 48 8B D5 89", 2);
-			hook::put<uint32_t>(location, 0x7FFFFFFF);
-		}
-
-		// increase the heap size for allocator 0
-		hook::put<uint32_t>(hook::get_pattern("83 C8 01 48 8D 0D ? ? ? ? 41 B1 01 45 33 C0", 17), 700 * 1024 * 1024); // 700 MiB, default in 323 was 412 MiB
+		}*/
 	});
 
 }
