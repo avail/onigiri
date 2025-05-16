@@ -2,7 +2,6 @@
 
 #include <utils/static_initializer.hpp>
 
-#if 0
 #include <gta/gameSkeleton.hpp>
 
 static std::uint32_t sus_2802_hash = 0xA0F39FB6;
@@ -16,14 +15,16 @@ namespace rage
 
 	bool InitFunctionData::TryInvoke(InitFunctionType type)
 	{
-		if (funcHash == hash_string("fwClothMeshing")
-			|| funcHash == hash_string("rageSecEngine")
-			|| funcHash == hash_string("CCreditsText")
-			|| funcHash == hash_string("rageSecGamePluginManager")
-			|| funcHash == hash_string("TamperActions")
+		static std::map<uint32_t, const char*> hashmap =
+		{
+			{ hash_string("TamperActions"), "TamperActions" },
+			{ sus_2802_hash, "sus_2802_hash" }
+		};
+
+		if (funcHash == hash_string("TamperActions")
 			|| funcHash == sus_2802_hash)
 		{
-			onigiri::services::logger::info("not invoking ac init func");
+			onigiri::services::logger::info("not invoking ac init func: {}", hashmap[funcHash]);
 			return false;
 		}
 
@@ -58,11 +59,7 @@ namespace rage
 	{
 		for (auto entry = update; entry; entry = entry->m_nextPtr)
 		{
-			if (/*entry->m_hash == hash_string("fwClothMeshing")
-				||*/ entry->m_hash == hash_string("rageSecEngine")
-				//|| entry->m_hash == hash_string("CCreditsText")
-				//|| entry->m_hash == hash_string("rageSecGamePluginManager")
-				//|| entry->m_hash == hash_string("TamperActions")
+			if (entry->m_hash == hash_string("TamperActions")
 				|| entry->m_hash == sus_2802_hash)
 			{
 				return;
@@ -91,16 +88,20 @@ namespace rage
 
 static onigiri::utils::static_initializer _([]()
 {
+	// only disable the anticheat in DEBUG, RunInitFunctions has a pso init section in it now which breaks.. something
+	// we disable the anticheat to be able to debug GTA.
+#if !DEBUG
 	return;
+#endif
 
 	onigiri::services::logger::info("disabling rage::RageSecurity~");
 
 	{
-		void* location = hook::pattern("BA 04 00 00 00 E8 ? ? ? ? E8 ? ? ? ? E8").count(1).get(0).get<void>(5);
+		void* location = hook::pattern("BA ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? 48 83 C4").count(1).get(0).get<void>(5);
 		hook::jump(hook::get_call(location), hook::get_member(&rage::gameSkeleton::RunInitFunctions));
 	}
 
-	hook::jump(hook::get_call(hook::get_pattern("48 8D 0D ? ? ? ? BA 02 00 00 00 84 DB 75 05", -17)), hook::get_member(&rage::gameSkeleton::RunUpdate));
-	hook::jump(hook::get_pattern("40 53 48 83 EC 20 48 8B 59 20 EB 0D 48 8B 03 48"), hook::get_member(&rage::gameSkeleton_updateBase::RunGroup));
+	hook::jump(hook::get_call(hook::get_pattern("83 C2 ? 48 8D 0D ? ? ? ? E8 ? ? ? ? C6 05", 10)), hook::get_member(&rage::gameSkeleton::RunUpdate));
+	hook::jump(hook::get_pattern("56 48 83 EC ? 48 8B 71 ? 48 85 F6 74 ? 66 90 48 8B 06 48 89 F1"), hook::get_member(&rage::gameSkeleton_updateBase::RunGroup));
 }, INT32_MIN);
-#endif
+

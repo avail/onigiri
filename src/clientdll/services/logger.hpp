@@ -1,5 +1,7 @@
 #pragma once
 
+#define LOG_TO_CONSOLE 0
+
 namespace onigiri::services
 {
 	class logger final
@@ -22,23 +24,31 @@ namespace onigiri::services
 		static void initialize();
 		static void shutdown();
 
+		// external use
+		static  __declspec(dllexport) void WriteLog(const char* channel, log_message message);
 
 		template<typename... argz>
 		static inline void info(std::format_string<argz...> fmt, argz&&... args)
 		{
-			write_log({ log_level::info, &std::format(fmt, std::forward<argz>(args)...)[0] });
+			write_log("onigiri", { log_level::info, &std::format(fmt, std::forward<argz>(args)...)[0] });
 		}
 
 		template<typename... argz>
 		static inline void debug(std::format_string<argz...> fmt, argz&&... args)
 		{
-			write_log({ log_level::debug, &std::format(fmt, std::forward<argz>(args)...)[0] });
+			write_log("onigiri", { log_level::debug, &std::format(fmt, std::forward<argz>(args)...)[0] });
+		}
+
+		template<typename... argz>
+		static inline void error(std::format_string<argz...> fmt, argz&&... args)
+		{
+			write_log("onigiri", { log_level::error, &std::format(fmt, std::forward<argz>(args)...)[0] });
 		}
 
 		// logging via instance += { level, print }
 		__forceinline void operator+=(log_message message)
 		{
-			write_log(message);
+			write_log("onigiri", message);
 		}
 
 	private:
@@ -48,7 +58,7 @@ namespace onigiri::services
 			return std::format("{:%d-%m-%Y %T}", time);
 		}
 
-		static inline void write_log(log_message message)
+		static inline void write_log(const char* channel, log_message message)
 		{
 			std::lock_guard _(m_log_mutex);
 
@@ -79,25 +89,39 @@ namespace onigiri::services
 			}
 
 			level_str_console += level_str;
+
+			if (!strstr(channel, "onigiri"))
+			{
+				level_str_console += "[";
+				level_str_console += channel;
+				level_str_console += "]";
+			}
+
 			level_str_console += color_reset;
 			level_str_console += '\t';
 
 			m_log_file << time_now() << " " << level_str << " | " << message.message << std::endl;
 
+#if LOG_TO_CONSOLE
 			if (message.level != log_level::debug)
 			{
 				m_log_console << color_info << time_now() << " " << level_str_console << " | " << color_message << message.message << color_reset << std::endl;
 			}
+#endif
+
+			OutputDebugStringA(std::format("{} {} | {}", time_now(), level_str, message.message).c_str());
 		}
 
 	private:
+#if LOG_TO_CONSOLE
 		static inline bool m_has_console;
 		static inline HANDLE m_console_handle;
 		static inline DWORD m_console_mode;
+		static inline std::ofstream m_log_console;
+#endif
 
 		static inline std::mutex m_log_mutex;
 		static inline std::ofstream m_log_file;
-		static inline std::ofstream m_log_console;
 
 		static constexpr const char* color_reset = "\033[0m";
 		static constexpr const char* color_debug = "\033[96m";

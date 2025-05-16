@@ -18,7 +18,6 @@ static void device_print(const char* func, const char* detail)
 	onigiri::services::logger::debug("[{}] {}", func, detail);
 }
 
-
 static hook::cdecl_stub<bool* (rage::fiDevice*, const char*)> mount_wrap([]()
 {
 	return hook::get_pattern("44 0F B6 81 14 01 00 00", -0x1B);
@@ -37,22 +36,6 @@ static hook::cdecl_stub<void(void*, const char*, bool, rage::fiDevice*)> set_pat
 void rage::fiDevice::SetPath(const char* path, bool allowRoot, rage::fiDevice* parent)
 {
 	set_path(this, path, allowRoot, parent);
-}
-
-rage::fiDeviceRelative::fiDeviceRelative()
-{
-	VMT = hook::get_pattern("48 C7 47 08 00 00 00 00 48 89 3E", -7);
-	pad[0xF8] = 0;
-}
-
-bool rage::fiDeviceRelative::Mount(const char* mountPoint)
-{
-	return reinterpret_cast<rage::fiDevice*>(this)->Mount(mountPoint);
-}
-
-void rage::fiDeviceRelative::SetPath(const char* path, bool allowRoot, rage::fiDevice* parent)
-{
-	reinterpret_cast<rage::fiDevice*>(this)->SetPath(path, allowRoot, parent);
 }
 
 rage::fiDeviceLocal::fiDeviceLocal()
@@ -239,11 +222,6 @@ HANDLE rage::fiDeviceLocal::OpenBulkDrm(const char* fileName, uint64_t* ptr, voi
 	return OpenBulk(fileName, ptr);
 }
 
-HANDLE rage::fiDeviceLocal::OpenGen9(const char* fileName, uint64_t* ptr, void* unk1, void* unk2)
-{
-	return OpenBulk(fileName, ptr);
-}
-
 uint32_t rage::fiDeviceLocal::Seek(HANDLE handle, int32_t distance, uint32_t method)
 {
 	return (uint32_t)Seek64(handle, (uint64_t)distance, method);
@@ -381,11 +359,6 @@ uint32_t rage::fiDeviceLocal::IsMemoryMappedDevice()
 	return 2;
 }
 
-uint64_t rage::fiDeviceLocal::ReturnZero1()
-{
-	return 0;
-}
-
 uint32_t rage::fiDeviceLocal::GetResourceInfo(const char* fileName, rage::fiResourceInfo* flags)
 {
 	auto size = this->GetFileSize(fileName);
@@ -410,7 +383,7 @@ uint32_t rage::fiDeviceLocal::GetResourceInfo(const char* fileName, rage::fiReso
 				"\trsc7Header.virtPages {:08x}\n"
 				"\trsc7Header.physPages {:08x}", fileName, rsc7Header.magic, rsc7Header.version, rsc7Header.virtPages, rsc7Header.physPages);
 
-		onigiri::services::logger::debug(a.c_str());*/
+		onigiri::services::logger::onigiri::services::logger::debug(a.c_str());*/
 
 		if (rsc7Header.magic == 0x37435352) // RSC7
 		{

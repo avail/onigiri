@@ -53,10 +53,42 @@ namespace hook
 		memcpy((void*)address, &value, sizeof(value));
 	}
 
+	template<typename ValueType, typename AddressType>
+	inline void putVP(AddressType address, ValueType value)
+	{
+		DWORD oldProtect;
+		VirtualProtect(address, sizeof(value) + 2, PAGE_READWRITE, &oldProtect);
+		memcpy((void*)address, &value, sizeof(value));
+		VirtualProtect(address, sizeof(value) + 2, oldProtect, &oldProtect);
+	}
+
 	template<typename AddressType>
 	inline void nop(AddressType address, size_t length)
 	{
 		memset((void*)address, 0x90, length);
+	}
+
+	template<typename AddressType>
+	inline void nopVP(AddressType address, size_t length)
+	{
+		DWORD oldProtect;
+		VirtualProtect(address, length + 2, PAGE_READWRITE, &oldProtect);
+		memset((void*)address, 0x90, length);
+		VirtualProtect(address, length + 2, oldProtect, &oldProtect);
+	}
+
+	template<typename AddressType>
+	inline void return_function(AddressType address, uint16_t stackSize = 0)
+	{
+		if (stackSize == 0)
+		{
+			put<uint8_t>(address, 0xC3);
+		}
+		else
+		{
+			put<uint8_t>(address, 0xC2);
+			put<uint16_t>((uintptr_t)address + 1, stackSize);
+		}
 	}
 
 	void* AllocateFunctionStub(void *origin, void *function, int type);

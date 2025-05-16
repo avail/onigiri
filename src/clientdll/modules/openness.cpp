@@ -1,171 +1,95 @@
 #include <stdinc.hpp>
 
-#if 0
-#include <gta/fiPackfile.hpp>
+#include <utils/assembler.hpp>
+#include <modules/openness.hpp>
 
-#include <utils/Hooking.h>
-#include <utils/Hooking.IAT.h>
-#include <utils/HookFunction.h>
-
-struct DirectoryEntry
+namespace onigiri
 {
-	uint32_t nameOffset;
-	uint32_t entryType;
-	uint32_t entryIndex;
-	uint32_t entriesCnt;
-};
-
-struct BinaryEntry
-{
-	uint16_t nameOffset;
-	uint8_t fileSize[3];
-	uint8_t fileOffset[3];
-	uint32_t realSize;
-	uint32_t isEncrypted;
-
-	uint32_t GetFileSize()
+	enum class CurrentEncryption : uint32_t
 	{
-		return fileSize[0] + (fileSize[1] << 8) + (fileSize[2] << 16);
-	}
-
-	uint32_t GetFileOffset()
-	{
-		return fileOffset[0] + (fileOffset[1] << 8) + (fileOffset[2] << 16);
-	}
-
-	bool IsCompressed()
-	{
-		return GetFileSize() != 0;
-	}
-};
-
-struct ResourceEntry
-{
-	uint16_t nameOffset;
-	uint8_t fileSize[3];
-	uint8_t fileOffset[3];
-	uint32_t systemFlags;
-	uint32_t graphicsFlags;
-
-	uint32_t GetFileSize()
-	{
-		return fileSize[0] + (fileSize[1] << 8) + (fileSize[2] << 16);
-	}
-
-	uint32_t GetFileOffset()
-	{
-		return (fileOffset[0] + (fileOffset[1] << 8) + (fileOffset[2] << 16)) & 0x7FFFFF;
-	}
-};
-
-struct Entry
-{
-	union
-	{
-		DirectoryEntry dir;
-		BinaryEntry bin;
-		ResourceEntry res;
+		NG = 0xF0EFFFFF,
+		OPEN = 0x4E45504F,
 	};
 
-	bool IsDirectory()
+	CurrentEncryption currentEncryption;
+
+	bool AES__isTransformITKeyId(uint32_t encryption)
 	{
-		return dir.entryType == 0x7FFFFF00;
+		currentEncryption = (CurrentEncryption)encryption;
+
+		return (encryption & 0xFF00000) == 0xFE00000;
 	}
 
-	bool IsBinary()
+	void openness::AES__TransformITDecryptHook(uint32_t selector, void* data, uint32_t size)
 	{
-		return !IsDirectory() && (dir.entryType & 0x80000000) == 0L;
-	}
-
-	bool IsResource()
-	{
-		return !IsDirectory() && !IsBinary();
-	}
-};
-
-uint32_t currentEncryption;
-bool FindEncryptionHook(uint32_t encryption)
-{
-	currentEncryption = encryption;
-	return (encryption & 0xFF00000) == 0xFE00000;
-}
-
-void(*g_origDecryptHeader)(uint32_t, char*, int);
-void DecryptHeaderHook(uint32_t salt, char* entryTable, int size)
-{
-	if (currentEncryption == 0x4E45504F)
-	{
-		onigiri::services::logger::debug("found NEPO packfile, not decrypting");
-		return;
-	}
-
-	g_origDecryptHeader(salt, entryTable, size);
-}
-
-void(*g_origDecryptHeader2)(uint32_t, uint32_t, char*, int);
-void DecryptHeader2Hook(uint32_t encryption, uint32_t salt, char* header, int nameTableLen)
-{
-	if (encryption == 0x4E45504F)
-	{
-		onigiri::services::logger::debug("found NEPO packfile, not decrypting");
-		return;
-	}
-
-	g_origDecryptHeader2(encryption, salt, header, nameTableLen);
-}
-
-bool(*g_origParseHeader)(rage::fiPackfile*, const char*, bool, void*);
-bool ParseHeaderHook(rage::fiPackfile* a1, const char* name, bool readHeader, void* customHeader)
-{
-	bool ret = g_origParseHeader(a1, name, readHeader, customHeader);
-
-	if (ret)
-	{
-		for (int i = 0; i < a1->filesCount; ++i)
+		if (currentEncryption == CurrentEncryption::OPEN)
 		{
-			Entry* v21 = (Entry*)(a1->entryTable + 16 * i);
-			if (v21->IsBinary() && v21->bin.nameOffset > 0 && v21->bin.isEncrypted)
-			{
-				if (currentEncryption == 0x4E45504F)
-				{
-					onigiri::services::logger::debug("ParseHeaderHook oiv package");
-					v21->bin.isEncrypted = 0xFEFFFFF;
-				}
-			}
+			onigiri::services::logger::info("found NEPO packfile, not decrypting");
+			return;
 		}
 
-		if (currentEncryption == 0x4E45504F)
+		openness::AES__TransformITDecrypt(selector, data, size);
+	}
+
+	void openness::AES__DecryptHook(uint32_t encryption, uint32_t salt, char* header, int nameTableLen)
+	{
+		if (encryption == (uint32_t)CurrentEncryption::OPEN)
 		{
-			onigiri::services::logger::debug("ParseHeaderHook oiv package");
-			a1->currentFileOffset = 0xFEFFFFF;
+			onigiri::services::logger::info("found NEPO packfile, not decrypting");
+			return;
 		}
+
+		openness::AES__Decrypt(encryption, salt, header, nameTableLen);
 	}
 
-	return ret;
+	STATICALLY_INITIALIZE(openness)([]()
+	{
+		onigiri::services::logger::info("adding openiv archive support :3");
+
+		//hook::nopVP(hook::get_pattern("89 D8 25 ? ? ? ? 48 8D 0D"), 29);
+
+		// AES::isTransformITKeyId
+		hook::call(hook::get_pattern("89 8E BC 00 00 00 E8 ? ? ? ? 80 7C", 6), AES__isTransformITKeyId);
+
+		// AES::TransformITDecrypt
+		{
+			auto location = hook::get_pattern("74 0F 48 8B 56 28 44 89 E1", 12);
+			AES__TransformITDecrypt = onigiri::utils::call(location, AES__TransformITDecryptHook);
+		}
+
+		// rage::AES::Decrypt
+		{
+			auto location = hook::get_pattern("8B 8E BC 00 00 00 44 89 E2 4D 89 F8", 12);
+			AES__Decrypt = onigiri::utils::call(location, AES__DecryptHook);
+		}
+
+		// rage::AES::Decrypt
+		{
+			auto location = hook::get_pattern("48 8B 46 ? 8B 4C 24 ? 48 8D 14 08", -5);
+			onigiri::utils::call(location, AES__DecryptHook);
+		}
+
+		auto location = hook::get_pattern("8B 44 24 ? 89 04 0B");
+		auto retLoc = hook::get_pattern("8B 46 ? EB ? 31 C0 48 83 7E");
+
+		onigiri::utils::assembler(location, [retLoc](auto& a)
+		{
+			auto post = a.newLabel();
+			auto isOpenIV = a.newLabel();
+
+			a.mov(eax, dword_ptr(rsp, 0x3C)); // mov eax, [rsp+88h+a4+0Ch]
+
+			a.cmp(eax, 0x4E45504F);
+			a.jz(isOpenIV);
+
+			a.mov(dword_ptr(rbx, rcx), eax);
+			a.jmp(post);
+
+			a.bind(isOpenIV);
+			a.mov(dword_ptr(rbx, rcx), 0x0FEFFFFF);
+
+			a.bind(post);
+			a.jmp(retLoc);
+		});
+	});
 }
-
-static HookFunction _([]
-{
-	onigiri::services::logger::info("we are NEPO");
-
-	hook::call(hook::get_pattern("E8 ? ? ? ? 48 8B 53 20 44 8B C7 41 8B CE E8"), FindEncryptionHook);
-
-	{
-		auto location = hook::get_address<void*>(hook::get_pattern("E8 ? ? ? ? 41 8B D4 44 39 63 28 76 3F 41 B9", 1));
-		hook::set_call(&g_origDecryptHeader, location);
-		hook::call(location, DecryptHeaderHook);
-	}
-
-	{
-		auto location = hook::get_address<void*>(hook::get_pattern("E8 ? ? ? ? 8B 55 F8 48 8B 43 10 48 03 D0 48 8B CB 48 89 53 18 66 44 89 22 33 D2 E8", 1));
-		hook::set_call(&g_origDecryptHeader2, location);
-		hook::call(location, DecryptHeader2Hook);
-	}
-
-	{
-		auto location = hook::get_address<void*>(hook::get_pattern("44 88 BB ? ? ? ? 89 43 58 E8 ? ? ? ? 4C 8D 9C 24 ? ? ? ? 49 8B 5B 38 49 8B 73 40 49 8B 7B 48 49 8B E3 41 5F 41 5E 41 5D 41 5C 5D C3", 11));
-		hook::set_call(&g_origParseHeader, location);
-		hook::call(location, ParseHeaderHook);
-	}
-});
-#endif

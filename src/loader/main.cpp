@@ -9,10 +9,17 @@ void log(const char* log)
 
 int main(int argc, char* argv[])
 {
-	log("waiting for gta5.exe\n");
+	log("launching gta5.exe\n");
+
+	/*
+	* GTA5_Enhanced.exe 
+	*/
+	auto program = "";
+	auto args = "-enableCrashpad -scCommerceProvider=4 @commandline.txt -fromRGL -scDiscordClientId=1329870933695135785 -rglLanguage=en-US -nobattleye";
+	system(std::format("\"{}\" {}", program, args).c_str());
 
 	// xdddddd
-	system("\"C:\\Program Files\\Rockstar Games\\Grand Theft Auto V\\PlayGTAV.exe\"");
+	/*system("\"C:\\Program Files\\Rockstar Games\\Grand Theft Auto V\\PlayGTAV.exe\"");
 
 	auto pid = injector::wait_for_process("GTA5.exe");
 
@@ -29,5 +36,5 @@ int main(int argc, char* argv[])
 	else
 	{
 		log("not so injected\n");
-	}
+	}*/
 }

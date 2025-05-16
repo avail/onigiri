@@ -19,6 +19,28 @@ submodule.define({
 	}
 })
 
+submodule.define({
+	name = "asmjit",
+	language = "c++",
+	libmode = "staticlib",
+
+	defines = {
+		"ASMJIT_NO_AARCH32",
+		"ASMJIT_NO_AARCH64",
+		"ASMJIT_NO_DEPRECATED",
+		"ASMJIT_STATIC"
+	},
+
+	includes = {
+		"vendor/asmjit/src"
+	},
+
+	files = {
+		"vendor/asmjit/src/asmjit/core/**.*",
+		"vendor/asmjit/src/asmjit/x86/**.*"
+	}
+})
+
 workspace "REKT.GTA5"
 	configurations { "Debug", "Release" }
 
@@ -91,7 +113,8 @@ project "clientdll"
 	files {
 		"src/clientdll/**.cpp",
 		"src/clientdll/**.hpp",
-		"src/clientdll/**.h"
+		"src/clientdll/**.h",
+		"src/clientdll/rcfile.rc"
 	}
 
 	links {
@@ -103,9 +126,10 @@ project "clientdll"
         'if "%COMPUTERNAME%" == "MYTHOLOGIA"  ( copy/y "$(TargetPath)" "G:\\Games\\Grand Theft Auto V Enhanced\\onigiri.asi" )'
     })
 
-	submodule.include({ "minhook" })
+	submodule.include({ "minhook", "asmjit" })
 
---[[project "onigiri"
+project "loader"
+	targetname "loader"
 	kind "ConsoleApp"
 	language "c++"
 	staticruntime "On"
@@ -121,7 +145,6 @@ project "clientdll"
 		"src/loader/**.cpp",
 		"src/loader/**.hpp",
 	}
-]]
 
 group "vendor"
 	submodule.register_all()

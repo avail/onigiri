@@ -1,7 +1,6 @@
 #pragma once
 
-#if 0
-#include <gta/sysAllocator.hpp>
+//#include <gta/sysAllocator.hpp>
 
 #ifndef max
 #define max std::max
@@ -15,7 +14,7 @@ public:
 	TValue* m_offset;
 	uint16_t m_count;
 	uint16_t m_size;
-
+#if 0
 public:
 	atArray()
 	{
@@ -73,18 +72,6 @@ public:
 	inline uint16_t GetSize()
 	{
 		return m_size;
-	}
-
-	TValue& Get(uint16_t offset)
-	{
-		if (offset >= m_size)
-		{
-#ifdef _DEBUG
-			assert(!"atArray index out of bounds");
-#endif
-		}
-
-		return m_offset[offset];
 	}
 
 	void Expand(uint16_t newSize)
@@ -153,6 +140,18 @@ public:
 
 		m_count--;
 	}
+#endif
+	TValue& Get(uint16_t offset)
+	{
+		if (offset >= m_size)
+		{
+#ifdef _DEBUG
+			assert(!"atArray index out of bounds");
+#endif
+		}
+
+		return m_offset[offset];
+	}
 
 	auto begin()
 	{
@@ -168,10 +167,10 @@ public:
 	{
 		return Get(idx);
 	}
+
 };
 
 #ifdef max_defined
 #undef max_defined
 #undef max
-#endif
 #endif

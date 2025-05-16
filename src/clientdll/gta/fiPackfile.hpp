@@ -3,16 +3,17 @@
 
 namespace rage
 {
-	class fiPackfile : public fiDevice
+	class fiPackfile
 	{
 	public:
-		virtual ~fiPackfile() = default;
+		//virtual ~fiPackfile() = default;
 
-		char pad_0x0008[0x8];
+		char pad_0x0008[4];
+
 		char* headers;
 		char* entriesDepth;
 		char* entryTable;
-		__int32 filesCount;
+		__int32 fileCount;
 		char pad_0x002C[4];
 		HANDLE openedFileHandle;
 		char fileTime[8];
@@ -21,7 +22,7 @@ namespace rage
 		char pad_0x004C[4];
 		void* relativeDevice;
 		char pad_0x0058[0x28];
-		char* packfileName;
+		char* packfileName; // 116
 		char pad_0x0088[0x8];
 		char isBinaryEntry;
 		char uint8_0x91;
@@ -39,4 +40,6 @@ namespace rage
 		char uint8_0xB8;
 		char pad_0x00B9[71];
 	};
+
+	constexpr size_t var = offsetof(fiPackfile, packfileName);
 }

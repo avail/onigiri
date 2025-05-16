@@ -1,21 +1,11 @@
 #include <stdinc.hpp>
 
 #include <gta/fiPackfile.hpp>
+#include <gta/fiDeviceRelative.hpp>
 
 #include <utils/static_initializer.hpp>
 
 #include <modules/custom_device.hpp>
-
-
-static hook::cdecl_stub<void(const char*, bool, rage::fiDevice*)> set_path([]()
-{
-	return hook::get_pattern("49 63 F5 42 0F BE 54 3E FF", -0x72);
-});
-
-static hook::cdecl_stub<bool*(rage::fiDevice*, const char*)> mount_wrap([]()
-{
-	return hook::get_pattern("44 0F B6 81 14 01 00 00", -0x1B);
-});
 
 namespace onigiri::modules
 {
@@ -24,35 +14,22 @@ namespace onigiri::modules
 		return hook::get_pattern("48 81 EC 88 05 00 00 89 D6 49 89 CE", -12);
 	});
 
-	custom_device::fiDeviceRelative::fiDeviceRelative()
-	{
-	}
-
-	void custom_device::fiDeviceRelative::SetPath(const char* relativeTo, rage::fiDevice* baseDevice, bool allowRoot)
-	{
-		set_path(relativeTo, allowRoot, baseDevice);
-	}
-
-	void custom_device::fiDeviceRelative::Mount(const char* mountPoint)
-	{
-		mount_wrap(GetDeviceHook(mountPoint, true), mountPoint);
-	}
-
 	char custom_device::open_archive_hook(rage::fiPackfile* a1, const char* path, char a3, int32_t type, __int64 a5)
 	{
 		auto device = GetDeviceHook(path, true);
 
-		if (device && custom_device::is_custom_device((fiDeviceRelative*)device))
+		if (device && custom_device::is_custom_device((rage::fiDeviceRelative*)device))
 		{
 			if (device->GetAttributes(path) & FILE_ATTRIBUTE_DIRECTORY)
 			{
-				onigiri::services::logger::debug("archive %s is a directory~", path);
+				onigiri::services::logger::debug("archive {} is a directory~", path);
 				type = 2;
 			}
 
-			onigiri::services::logger::debug("opening archive %s %d %d", path, a3, type);
+			onigiri::services::logger::debug("opening archive {} {} {}", path, a3, type);
 		}
 
+		onigiri::services::logger::debug("opening archive {} {} {} {:X}", path, a3, type, (uint64_t)a5);
 		return custom_device::open_archive(a1, path, a3, type, a5);
 	}
 
@@ -60,79 +37,79 @@ namespace onigiri::modules
 	{
 		custom_device::initial_mount();
 
-		std::filesystem::path cwd = std::filesystem::current_path() / "onigiri/";
+		std::filesystem::path cwd = std::filesystem::current_path() / "onigiri";
 		cwd.make_preferred();
 
-		services::logger::debug("mods path: {}", cwd.string());
+		onigiri::services::logger::info("mods path: {}", cwd.string());
 
-		fiDeviceRelative* root_device = new fiDeviceRelative();
-		root_device->SetPath(cwd.string().c_str(), nullptr, true);
-		root_device->Mount("onigiri:/");
+		auto* root_device = new rage::fiDeviceRelative();
+		root_device->Init(cwd.string().c_str(), true, nullptr);
+		root_device->MountAs("onigiri:/");
 
-		services::logger::debug("root device mounted~");
-		
-		platform_device = new fiDeviceRelative();
-		platform_device->SetPath("onigiri:/platform/", nullptr, true);
-		platform_device->Mount("platform:/");
+		onigiri::services::logger::info("root device mounted~");
 
-		platform_device_crc = new fiDeviceRelative();
-		platform_device_crc->SetPath("onigiri:/platform/", nullptr, true);
-		platform_device_crc->Mount("platformcrc:/");
+		platform_device = new rage::fiDeviceRelative();
+		platform_device->Init("onigiri:/platform/", true, nullptr);
+		platform_device->MountAs("platform:/");
 
-		platform2_device = new fiDeviceRelative();
-		platform2_device->SetPath("onigiri:/platform2/", nullptr, true);
-		platform2_device->Mount("platform2:/");
+		platform_device_crc = new rage::fiDeviceRelative();
+		platform_device_crc->Init("onigiri:/platform/", true, nullptr);
+		platform_device_crc->MountAs("platformcrc:/");
 
-		platform2_device_crc = new fiDeviceRelative();
-		platform2_device_crc->SetPath("onigiri:/platform2/", nullptr, true);
-		platform2_device_crc->Mount("platform2crc:/");
+		platform2_device = new rage::fiDeviceRelative();
+		platform2_device->Init("onigiri:/platform2/", true, nullptr);
+		platform2_device->MountAs("platform2:/");
 
-		common_device = new fiDeviceRelative();
-		common_device->SetPath("onigiri:/common/", nullptr, true);
-		common_device->Mount("common:/");
+		platform2_device_crc = new rage::fiDeviceRelative();
+		platform2_device_crc->Init("onigiri:/platform2/", true, nullptr);
+		platform2_device_crc->MountAs("platform2crc:/");
 
-		common_device_crc = new fiDeviceRelative();
-		common_device_crc->SetPath("onigiri:/common/", nullptr, true);
-		common_device_crc->Mount("commoncrc:/");
+		common_device = new rage::fiDeviceRelative();
+		common_device->Init("onigiri:/common/", true, nullptr);
+		common_device->MountAs("common:/");
 
-		dlc_device = new fiDeviceRelative();
-		dlc_device->SetPath("onigiri:/dlcpacks/", nullptr, true);
-		dlc_device->Mount("dlcpacks:/");
+		common_device_crc = new rage::fiDeviceRelative();
+		common_device_crc->Init("onigiri:/common/", true, nullptr);
+		common_device_crc->MountAs("commoncrc:/");
+
+		dlc_device = new rage::fiDeviceRelative();
+		dlc_device->Init("onigiri:/dlcpacks/", true, nullptr);
+		dlc_device->MountAs("dlcpacks:/");
 	}
 
 	void custom_device::load_level_metas_hook(void* data_file_manager, const char* name, bool enabled)
 	{
 		{
-			services::logger::debug("loading before-level metas~");
 			auto meh = std::filesystem::current_path() / "onigiri" / "before_level.xml";
+			onigiri::services::logger::info("loading before-level~ ({})", meh.string());
 			custom_device::load_level_metas(data_file_manager, &meh.string()[0], enabled);
 		}
 
-		services::logger::debug("loading level~");
+		onigiri::services::logger::info("loading level~ ({})", name);
 		custom_device::load_level_metas(data_file_manager, name, enabled);
 
 		{
-			services::logger::debug("loading after-level metas~");
 			auto meh = std::filesystem::current_path() / "onigiri" / "after_level.xml";
+			onigiri::services::logger::info("loading after-level~ ({})", meh.string());
 			custom_device::load_level_metas(data_file_manager, &meh.string()[0], enabled);
 		}
 	}
 
 	STATICALLY_INITIALIZE(custom_device)([]()
 	{
-		services::logger::info("applying custom device hooks");
+		onigiri::services::logger::info("applying custom device hooks~");
 
-		custom_device::open_archive = utils::detour(hook::get_pattern("48 81 EC 48 01 00 00 45 89 CD", -0x0C), custom_device::open_archive_hook);
+		//custom_device::open_archive = utils::detour(hook::get_pattern("48 81 EC 48 01 00 00 45 89 CD", -0x0C), custom_device::open_archive_hook);
 
 		{
 			auto location = hook::pattern("66 C7 44 58 02 00 00").count(1).get(0).get<void>(0xE);
 			custom_device::initial_mount = utils::call(location, custom_device::initial_mount_hook);
 		}
 
-		/*{
+		{
 			void* location = hook::pattern("48 8D ? ? ? ? ? B2 01 41 B8 FF FF FF FF 45 31 C9").count(1).get(0).get<void>(43);
 			custom_device::load_level_metas = utils::call(location, custom_device::load_level_metas_hook);
-		}*/
+		}
 
 		// increase non-DLC fiDevice mount limit
 		{
@@ -142,13 +119,6 @@ namespace onigiri::modules
 
 		// don't sort update:/ relative devices before ours
 		hook::nop(hook::pattern("C6 80 00 01 00 00 00 48 83 C4 20").count(1).get(0).get<void>(-12), 5);
-
-		// don't crash (forget to call rage::fiDevice::Unmount) on failed DLC text reads
-		// hmm..
-		/*{
-			auto location = hook::get_pattern("41 8B D6 E9 7C 02 00 00", 4);
-			*(int*)location -= 0x12;
-		}*/
 	});
 
 }

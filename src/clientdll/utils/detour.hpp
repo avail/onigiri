@@ -29,7 +29,7 @@ namespace onigiri::utils
 		F* function_;
 	};
 
-	template <typename F> inline auto detour(void* address, F* function) -> utils::function<F>
+	template <typename F> inline utils::function<F> detour(void* address, F* function)
 	{
 		auto result = utils::function<F>();
 
@@ -46,9 +46,12 @@ namespace onigiri::utils
 		return result;
 	}
 
-	template <typename F> inline auto call(void* address, F* function) -> utils::function<F>
+	template <typename F> inline utils::function<F> call(void* address, F* function)
 	{
 		auto result = utils::function<F>();
+
+		DWORD oldProtect;
+		VirtualProtect(address, 16, PAGE_EXECUTE_READWRITE, &oldProtect);
 
 		hook::set_call(&result, address);
 		hook::call(address, function);
@@ -56,16 +59,16 @@ namespace onigiri::utils
 		return result;
 	}
 
-	template <typename F> inline auto iat(const wchar_t* module_name, const char* function_name, F* function) -> utils::function<F>
+	template <typename F> inline utils::function<F> iat(const wchar_t* module_name, const char* function_name, F* function)
 	{
 		auto result = utils::function<F>(nullptr);
 
-		if (::MH_CreateHookApi(module_name, function_name, reinterpret_cast<void*>(function), reinterpret_cast<void**>(&result)) != ::MH_OK)
+		if (MH_CreateHookApi(module_name, function_name, reinterpret_cast<void*>(function), reinterpret_cast<void**>(&result)) != ::MH_OK)
 		{
 			//NFSCO_ASSERT(false);
 		}
 
-		if (::MH_EnableHook(MH_ALL_HOOKS) != ::MH_OK)
+		if (MH_EnableHook(MH_ALL_HOOKS) != ::MH_OK)
 		{
 			//NFSCO_ASSERT(false);
 		}
@@ -75,12 +78,11 @@ namespace onigiri::utils
 
 	inline void init()
 	{
-		::MH_Initialize();
+		MH_Initialize();
 	}
 
 	inline void shutdown()
 	{
-		::MH_Uninitialize();
+		MH_Uninitialize();
 	}
-
 }
